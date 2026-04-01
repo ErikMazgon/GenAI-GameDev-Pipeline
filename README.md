@@ -27,6 +27,8 @@ From `Content/Python`:
 
 - Start server: `python llm_server.py`
 - Health check: `http://127.0.0.1:5000/health`
+- Testing: `http://127.0.0.1:5000/docs`
+
 
 Expected health response includes:
 

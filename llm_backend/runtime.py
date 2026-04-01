@@ -43,8 +43,8 @@ def load_image_pipeline() -> None:
         image_pipe = DiffusionPipeline.from_pretrained(
             "stabilityai/stable-diffusion-xl-base-1.0",
             torch_dtype=torch.bfloat16,
-            device_map="cuda",
         )
+        image_pipe.to("cuda")
         image_pipe.load_lora_weights("nerijs/pixel-art-xl")
         image_load_status = "loaded"
         print("Image pipeline loaded!")
