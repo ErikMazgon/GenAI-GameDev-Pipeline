@@ -8,8 +8,10 @@ The server was refactored from one file into a small package:
 - `llm_server.py` - thin entrypoint (starts Uvicorn)
 - `llm_backend/app.py` - creates FastAPI app and wires routes
 - `llm_backend/routes.py` - HTTP endpoints (`/generate`, `/result/{id}`, `/generate_image`, `/image_result/{id}`, `/health`)
+- `llm_backend/routes.py` - HTTP endpoints (`/generate`, `/result/{id}`, `/generate_image`, `/image_result/{id}`, `/generate_music`, `/music_result/{id}`, `/health`)
 - `llm_backend/schemas.py` - Pydantic request/response models
 - `llm_backend/runtime.py` - shared runtime state (model/tokenizer loading, device, executor, task stores, image pipeline loader)
+- `llm_backend/runtime.py` - shared runtime state (model/tokenizer loading, device, executor, task stores, image pipeline loader, music model loader)
 - `llm_backend/config.py` - constants and environment/output path setup
 - `llm_backend/services/text_service.py` - text generation logic
 - `llm_backend/services/image_service.py` - image generation and save logic
@@ -36,3 +38,4 @@ Expected health response includes:
 - `model`
 - `device`
 - `image_pipeline`
+- `music_pipeline`

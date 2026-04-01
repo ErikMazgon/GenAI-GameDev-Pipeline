@@ -9,8 +9,10 @@ from .schemas import (
     ImagePromptRequest,
     PromptRequest,
     ResultResponse,
+    MusicPromptRequest,
 )
 from .services.image_service import generate_image
+from .services.music_service import generate_music
 from .services.text_service import generate_text, generate_text_sync
 
 router = APIRouter()
@@ -40,6 +42,43 @@ async def generate_image_endpoint(request: ImagePromptRequest):
         request.width,
     )
     return {"task_id": task_id, "status": "processing"}
+
+@router.post("/generate_music", response_model=GenerateResponse)
+async def generate_music_endpoint(request: MusicPromptRequest):
+    if runtime.music_load_status != "loaded":
+        return {
+            "task_id": "",
+            "status": runtime.music_load_status
+            if runtime.music_load_status != "error"
+            else f"error: {runtime.music_load_error}",
+        }
+
+    task_id = str(uuid.uuid4())
+    runtime.music_results_store[task_id] = None
+
+    loop = asyncio.get_running_loop()
+    loop.run_in_executor(
+        runtime.executor,
+        generate_music,
+        task_id,
+        request.prompt,
+        request.name,
+        request.max_new_tokens,
+    )
+    return {"task_id": task_id, "status": "processing"}
+
+
+@router.get("/music_result/{task_id}")
+async def get_music_result(task_id: str):
+    if task_id not in runtime.music_results_store:
+        return {"status": "not_found", "path": None}
+
+    result = runtime.music_results_store[task_id]
+    if result is None:
+        return {"status": "processing", "path": None}
+
+    path = runtime.music_results_store.pop(task_id)
+    return {"status": "completed", "path": path}
 
 
 @router.get("/image_result/{task_id}")
@@ -92,6 +131,9 @@ async def health():
         "device": str(runtime.device),
         "image_pipeline": runtime.image_load_status,
         "image_pipeline_error": runtime.image_load_error,
+        "music_pipeline": runtime.music_load_status,
+        "music_pipeline_error": runtime.music_load_error,
         "pending_text_tasks": sum(1 for value in runtime.results_store.values() if value is None),
         "pending_image_tasks": sum(1 for value in runtime.image_results_store.values() if value is None),
+        "pending_music_tasks": sum(1 for value in runtime.music_results_store.values() if value is None),
     }

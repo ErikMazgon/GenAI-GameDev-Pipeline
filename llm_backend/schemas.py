@@ -22,3 +22,9 @@ class ImagePromptRequest(BaseModel):
     name: Optional[str] = None
     height: int = 1024
     width: int = 1024
+
+
+class MusicPromptRequest(BaseModel):
+    prompt: str
+    name: Optional[str] = None
+    max_new_tokens: int = 256
