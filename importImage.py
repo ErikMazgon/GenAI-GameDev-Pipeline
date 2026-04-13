@@ -1,15 +1,14 @@
 import unreal
 
 def importAssets(file_path):
-    adjusted_file_path = "" + file_path + ".png"
-    print(f"Importing asset from: {adjusted_file_path}")
+    print(f"Importing asset from: {file_path}")
 
     # create asset tools object
     assetTools = unreal.AssetToolsHelpers.get_asset_tools()
     # create asset import data object        
     assetImportData = unreal.AutomatedAssetImportData()
     # set assetImportData attributes
-    assetImportData.destination_path = '/Content/'
+    assetImportData.destination_path = '/Game/'
     assetImportData.filenames = [file_path]
     assetImportData.replace_existing = True
     assetTools.import_assets_automated(assetImportData)

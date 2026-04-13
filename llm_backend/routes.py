@@ -17,6 +17,16 @@ from .services.text_service import generate_text, generate_text_sync
 
 router = APIRouter()
 
+@router.post("/generate_text", response_model=GenerateResponse)
+async def generate_text_endpoint(request: PromptRequest):
+    task_id = str(uuid.uuid4())
+    runtime.results_store[task_id] = None
+
+    loop = asyncio.get_running_loop()
+    loop.run_in_executor(runtime.executor, generate_text, task_id, request.prompt)
+
+    return {"task_id": task_id, "status": "processing"}
+
 
 @router.post("/generate_image", response_model=GenerateResponse)
 async def generate_image_endpoint(request: ImagePromptRequest):
@@ -43,6 +53,7 @@ async def generate_image_endpoint(request: ImagePromptRequest):
     )
     return {"task_id": task_id, "status": "processing"}
 
+
 @router.post("/generate_music", response_model=GenerateResponse)
 async def generate_music_endpoint(request: MusicPromptRequest):
     if runtime.music_load_status != "loaded":
@@ -68,17 +79,19 @@ async def generate_music_endpoint(request: MusicPromptRequest):
     return {"task_id": task_id, "status": "processing"}
 
 
-@router.get("/music_result/{task_id}")
-async def get_music_result(task_id: str):
-    if task_id not in runtime.music_results_store:
-        return {"status": "not_found", "path": None}
 
-    result = runtime.music_results_store[task_id]
+
+@router.get("/text_result/{task_id}", response_model=ResultResponse)
+async def get_text_result(task_id: str):
+    if task_id not in runtime.results_store:
+        return {"status": "not_found", "response": None}
+
+    result = runtime.results_store[task_id]
     if result is None:
-        return {"status": "processing", "path": None}
+        return {"status": "processing", "response": None}
 
-    path = runtime.music_results_store.pop(task_id)
-    return {"status": "completed", "path": path}
+    response = runtime.results_store.pop(task_id)
+    return {"status": "completed", "response": response}
 
 
 @router.get("/image_result/{task_id}")
@@ -94,33 +107,25 @@ async def get_image_result(task_id: str):
     return {"status": "completed", "path": path}
 
 
-@router.post("/generate", response_model=GenerateResponse)
-async def generate(request: PromptRequest):
-    task_id = str(uuid.uuid4())
-    runtime.results_store[task_id] = None
+@router.get("/music_result/{task_id}")
+async def get_music_result(task_id: str):
+    if task_id not in runtime.music_results_store:
+        return {"status": "not_found", "path": None}
 
-    loop = asyncio.get_running_loop()
-    loop.run_in_executor(runtime.executor, generate_text, task_id, request.prompt)
-
-    return {"task_id": task_id, "status": "processing"}
-
-
-@router.get("/result/{task_id}", response_model=ResultResponse)
-async def get_result(task_id: str):
-    if task_id not in runtime.results_store:
-        return {"status": "not_found", "response": None}
-
-    result = runtime.results_store[task_id]
+    result = runtime.music_results_store[task_id]
     if result is None:
-        return {"status": "processing", "response": None}
+        return {"status": "processing", "path": None}
 
-    response = runtime.results_store.pop(task_id)
-    return {"status": "completed", "response": response}
+    path = runtime.music_results_store.pop(task_id)
+    return {"status": "completed", "path": path}
 
 
-@router.post("/generate_sync")
-async def generate_sync(request: PromptRequest):
-    return {"response": generate_text_sync(request.prompt)}
+
+
+
+# @router.post("/generate_sync")
+# async def generate_sync(request: PromptRequest):
+#     return {"response": generate_text_sync(request.prompt)}
 
 
 @router.get("/health")
