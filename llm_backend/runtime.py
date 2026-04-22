@@ -78,6 +78,8 @@ def load_music_pipeline() -> None:
         music_model = music_model.to(device)
         music_load_status = "loaded"
         print("Music model loaded!")
+        if image_load_status == "loaded" and music_load_status == "loaded":
+            print("All models loaded!")
     except Exception as error:
         music_processor = None
         music_model = None

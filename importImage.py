@@ -8,7 +8,7 @@ def importAssets(file_path):
     # create asset import data object        
     assetImportData = unreal.AutomatedAssetImportData()
     # set assetImportData attributes
-    assetImportData.destination_path = '/Game/'
+    assetImportData.destination_path = '/Game/Python/GeneratedAssets'
     assetImportData.filenames = [file_path]
     assetImportData.replace_existing = True
     assetTools.import_assets_automated(assetImportData)
