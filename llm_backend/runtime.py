@@ -2,7 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Optional
 
 import torch
-from transformers import AutoModelForCausalLM, AutoProcessor, AutoTokenizer, MusicgenForConditionalGeneration
+from transformers import AutoModelForCausalLM, AutoProcessor, AutoTokenizer, MusicgenForConditionalGeneration, BitsAndBytesConfig
 
 from .config import MODEL_NAME, MUSIC_MODEL_NAME, configure_cache_paths, ensure_output_dir
 
@@ -14,11 +14,27 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side = "left"
+
+quantization_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_compute_dtype=torch.float16,
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_quant_type="nf4"
+)
+
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
+    quantization_config=quantization_config,
     torch_dtype=torch.float16 if device == "cuda" else torch.float32,
     device_map="cuda" if device == "cuda" else "auto",
+    low_cpu_mem_usage=True,
+    attn_implementation="flash_attention_2",
 )
+model.config.pad_token_id = tokenizer.pad_token_id
+model.eval()
 
 print(f"Model device: {next(model.parameters()).device}")
 print("Model naložen!")

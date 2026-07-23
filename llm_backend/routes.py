@@ -13,7 +13,8 @@ from .schemas import (
 )
 from .services.image_service import generate_image
 from .services.music_service import generate_music
-from .services.text_service import generate_text, generate_text_sync
+from .services.text_service import generate_text 
+# , generate_text_sync
 
 router = APIRouter()
 

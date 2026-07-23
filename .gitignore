@@ -1,3 +1,38 @@
 outputs/
 __pycache__/
 *.pyc
+
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+.venv-1/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Model files (these are usually downloaded separately)
+*.bin
+*.pt
+*.pth
+*.safetensors
+
+# Logs and data
+logs/
+*.log
+*.csv
+*.jsonl
+
+# OS files
+.DS_Store
+Thumbs.db

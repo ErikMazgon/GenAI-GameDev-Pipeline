@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-MODEL_NAME = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+MODEL_NAME = "Qwen/Qwen2.5-3B-Instruct"
 MUSIC_MODEL_NAME = "facebook/musicgen-small"
 HF_CACHE_ROOT = Path(r"D:\ErikM\hf_cache")
 OUTPUT_DIR = Path(r"C:\Users\erik\Documents\Unreal Projects\MyProject\Content\Python\outputs")
