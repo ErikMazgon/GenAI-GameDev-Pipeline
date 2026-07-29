@@ -1,6 +1,7 @@
 outputs/
 __pycache__/
 *.pyc
+context/
 
 # Virtual Environment
 .venv/

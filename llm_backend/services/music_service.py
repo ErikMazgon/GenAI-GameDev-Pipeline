@@ -6,6 +6,8 @@ from scipy.io.wavfile import write
 
 from .. import runtime
 from ..config import OUTPUT_DIR
+from . import context_service
+from .text_service import _summarizer_generate_fn
 
 
 def generate_music(task_id: str, prompt: str, name: Optional[str], max_new_tokens: int) -> None:
@@ -39,5 +41,12 @@ def generate_music(task_id: str, prompt: str, name: Optional[str], max_new_token
         write(str(out_path), sampling_rate, audio)
 
         runtime.music_results_store[task_id] = str(out_path)
+
+        context_service.update_context_with_new_turn(
+            user_message=prompt,
+            assistant_response="sound",
+            generate_fn=_summarizer_generate_fn,
+        )
+
     except Exception as error:
         runtime.music_results_store[task_id] = f"Error: {error}"
