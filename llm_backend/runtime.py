@@ -81,8 +81,33 @@ def load_image_pipeline() -> None:
         image_load_error = str(error)
         print(f"Failed to load image pipeline: {error}")
     finally:
-        # executor.submit(load_music_pipeline)
+        executor.submit(load_music_pipeline)
         executor.submit(load_image_edit_pipeline)
+
+
+def load_music_pipeline() -> None:
+    global music_processor, music_model, music_load_status, music_load_error
+    try:
+        music_load_status = "loading"
+        music_load_error = None
+        print("Loading music model (background)...")
+        music_processor = AutoProcessor.from_pretrained(MUSIC_MODEL_NAME)
+        music_model = MusicgenForConditionalGeneration.from_pretrained(
+            MUSIC_MODEL_NAME,
+            attn_implementation="eager",
+            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        )
+        music_model = music_model.to(device)
+        music_load_status = "loaded"
+        print("Music model loaded!")
+
+    except Exception as error:
+        music_processor = None
+        music_model = None
+        music_load_status = "error"
+        music_load_error = str(error)
+        print(f"Failed to load music model: {error}")
+
 
 
 def load_image_edit_pipeline() -> None:
@@ -104,36 +129,14 @@ def load_image_edit_pipeline() -> None:
         image_edit_pipe = image_edit_pipe.to(device)
         image_edit_load_status = "loaded"
         print("Image edit pipeline loaded!")
+        if image_edit_load_status == "loaded" and image_load_status == "loaded" and music_load_status == "loaded":
+            print("All models loaded!")
     except Exception as error:
         image_edit_pipe = None
         image_edit_load_status = "error"
         image_edit_load_error = str(error)
         print(f"Failed to load image edit pipeline: {error}")
 
-
-def load_music_pipeline() -> None:
-    global music_processor, music_model, music_load_status, music_load_error
-    try:
-        music_load_status = "loading"
-        music_load_error = None
-        print("Loading music model (background)...")
-        music_processor = AutoProcessor.from_pretrained(MUSIC_MODEL_NAME)
-        music_model = MusicgenForConditionalGeneration.from_pretrained(
-            MUSIC_MODEL_NAME,
-            attn_implementation="eager",
-            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-        )
-        music_model = music_model.to(device)
-        music_load_status = "loaded"
-        print("Music model loaded!")
-        if image_load_status == "loaded" and music_load_status == "loaded":
-            print("All models loaded!")
-    except Exception as error:
-        music_processor = None
-        music_model = None
-        music_load_status = "error"
-        music_load_error = str(error)
-        print(f"Failed to load music model: {error}")
 
 
 def start_background_loaders() -> None:
