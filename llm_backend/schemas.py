@@ -24,6 +24,16 @@ class ImagePromptRequest(BaseModel):
     width: int = 1024
 
 
+class ImageEditPromptRequest(BaseModel):
+    source_image: str
+    prompt: str
+    negative_prompt: str = "3d render, realistic"
+    strength: float = 0.4
+    guidance_scale: float = 1.5
+    num_inference_steps: int = 8
+    name: str
+
+
 class MusicPromptRequest(BaseModel):
     prompt: str
     name: Optional[str] = None

@@ -1,16 +1,19 @@
 import asyncio
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from . import runtime
 from .schemas import (
     GenerateResponse,
+    ImageEditPromptRequest,
     ImagePromptRequest,
     PromptRequest,
     ResultResponse,
     MusicPromptRequest,
 )
+from .services.image_edit_service import edit_image
+from .services.image_edit_service import resolve_output_path, resolve_source_image_path
 from .services.image_service import generate_image
 from .services.music_service import generate_music
 from .services.text_service import generate_text 
@@ -51,6 +54,46 @@ async def generate_image_endpoint(request: ImagePromptRequest):
         request.name,
         request.height,
         request.width,
+    )
+    return {"task_id": task_id, "status": "processing"}
+
+
+@router.post("/edit_image", response_model=GenerateResponse)
+async def edit_image_endpoint(request: ImageEditPromptRequest):
+    if runtime.image_edit_load_status != "loaded":
+        return {
+            "task_id": "",
+            "status": runtime.image_edit_load_status
+            if runtime.image_edit_load_status != "error"
+            else f"error: {runtime.image_edit_load_error}",
+        }
+
+    try:
+        resolve_source_image_path(request.source_image)
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+    try:
+        resolve_output_path(request.name)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+    task_id = str(uuid.uuid4())
+    runtime.image_edit_results_store[task_id] = None
+
+    loop = asyncio.get_running_loop()
+    loop.run_in_executor(
+        runtime.executor,
+        edit_image,
+        task_id,
+        request.source_image,
+        request.prompt,
+        request.name,
+        request.strength,
+        request.guidance_scale,
+        request.num_inference_steps,
     )
     return {"task_id": task_id, "status": "processing"}
 
@@ -108,6 +151,19 @@ async def get_image_result(task_id: str):
     return {"status": "completed", "path": path}
 
 
+@router.get("/image_edit_result/{task_id}")
+async def get_image_edit_result(task_id: str):
+    if task_id not in runtime.image_edit_results_store:
+        return {"status": "not_found", "path": None}
+
+    result = runtime.image_edit_results_store[task_id]
+    if result is None:
+        return {"status": "processing", "path": None}
+
+    path = runtime.image_edit_results_store.pop(task_id)
+    return {"status": "completed", "path": path}
+
+
 @router.get("/music_result/{task_id}")
 async def get_music_result(task_id: str):
     if task_id not in runtime.music_results_store:
@@ -137,9 +193,12 @@ async def health():
         "device": str(runtime.device),
         "image_pipeline": runtime.image_load_status,
         "image_pipeline_error": runtime.image_load_error,
+        "image_edit_pipeline": runtime.image_edit_load_status,
+        "image_edit_pipeline_error": runtime.image_edit_load_error,
         "music_pipeline": runtime.music_load_status,
         "music_pipeline_error": runtime.music_load_error,
         "pending_text_tasks": sum(1 for value in runtime.results_store.values() if value is None),
         "pending_image_tasks": sum(1 for value in runtime.image_results_store.values() if value is None),
+        "pending_image_edit_tasks": sum(1 for value in runtime.image_edit_results_store.values() if value is None),
         "pending_music_tasks": sum(1 for value in runtime.music_results_store.values() if value is None),
     }

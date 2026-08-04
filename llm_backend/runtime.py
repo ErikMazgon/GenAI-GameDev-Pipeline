@@ -42,11 +42,16 @@ print("Model naložen!")
 executor = ThreadPoolExecutor(max_workers=2)
 results_store: Dict[str, Optional[str]] = {}
 image_results_store: Dict[str, Optional[str]] = {}
+image_edit_results_store: Dict[str, Optional[str]] = {}
 music_results_store: Dict[str, Optional[str]] = {}
 
 image_pipe = None
 image_load_status: str = "not_started"
 image_load_error: Optional[str] = None
+
+image_edit_pipe = None
+image_edit_load_status: str = "not_started"
+image_edit_load_error: Optional[str] = None
 
 music_processor = None
 music_model = None
@@ -76,7 +81,34 @@ def load_image_pipeline() -> None:
         image_load_error = str(error)
         print(f"Failed to load image pipeline: {error}")
     finally:
-        executor.submit(load_music_pipeline)
+        # executor.submit(load_music_pipeline)
+        executor.submit(load_image_edit_pipeline)
+
+
+def load_image_edit_pipeline() -> None:
+    global image_edit_pipe, image_edit_load_status, image_edit_load_error
+    try:
+        from diffusers import LCMScheduler, StableDiffusionXLImg2ImgPipeline
+
+        if image_pipe is None:
+            raise RuntimeError("Image pipeline must load before image edit pipeline")
+
+        image_edit_load_status = "loading"
+        image_edit_load_error = None
+        print("Building shared image edit pipeline (background)...")
+        image_edit_pipe = StableDiffusionXLImg2ImgPipeline(**image_pipe.components)
+        image_edit_pipe.scheduler = LCMScheduler.from_config(image_edit_pipe.scheduler.config)
+        image_edit_pipe.load_lora_weights("latent-consistency/lcm-lora-sdxl", adapter_name="lora")
+        image_edit_pipe.load_lora_weights("nerijs/pixel-art-xl", adapter_name="pixel")
+        image_edit_pipe.set_adapters(["lora", "pixel"], adapter_weights=[1.0, 1.2])
+        image_edit_pipe = image_edit_pipe.to(device)
+        image_edit_load_status = "loaded"
+        print("Image edit pipeline loaded!")
+    except Exception as error:
+        image_edit_pipe = None
+        image_edit_load_status = "error"
+        image_edit_load_error = str(error)
+        print(f"Failed to load image edit pipeline: {error}")
 
 
 def load_music_pipeline() -> None:

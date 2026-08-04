@@ -25,9 +25,22 @@ New image request: {user_request}
 Rewrite the new image request as a single, self-contained, descriptive image-generation prompt.
 Incorporate relevant details from the design document (art style, characters, setting, tone)
 only if clearly relevant to this specific request. Do not invent unrelated details.
-Output ONLY the final prompt text, nothing else.
+
+STRICT LENGTH LIMIT: maximum 60 words. Prioritize concrete visual details (subject, pose,
+clothing, colors, setting, lighting, art style) over narrative/emotional description.
+Output ONLY the final prompt text, nothing else — no explanations, no quotation marks.
 """
-    return _summarizer_generate_fn(distill_prompt).strip()
+    result = _summarizer_generate_fn(distill_prompt).strip()
+    return _clip_safe_truncate(result)
+
+
+def _clip_safe_truncate(text: str, max_words: int = 60) -> str:
+    """Hard safety net in case the model ignores the word limit — CLIP truncates at 77 tokens,
+    so keep well under that since words often split into multiple tokens."""
+    words = text.split()
+    if len(words) > max_words:
+        text = " ".join(words[:max_words])
+    return text
 
 
 def generate_image(task_id: str, prompt: str, name: Optional[str], height: int, width: int) -> None:
