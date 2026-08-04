@@ -29,18 +29,22 @@ async def generate_text_endpoint(request: PromptRequest):
     loop = asyncio.get_running_loop()
     loop.run_in_executor(runtime.executor, generate_text, task_id, request.prompt)
 
-    return {"task_id": task_id, "status": "processing"}
+    response = {"task_id": task_id, "status": "processing"}
+    print(response)
+    return response
 
 
 @router.post("/generate_image", response_model=GenerateResponse)
 async def generate_image_endpoint(request: ImagePromptRequest):
     if runtime.image_load_status != "loaded":
-        return {
+        response = {
             "task_id": "",
             "status": runtime.image_load_status
             if runtime.image_load_status != "error"
             else f"error: {runtime.image_load_error}",
         }
+        print(response)
+        return response
 
     task_id = str(uuid.uuid4())
     runtime.image_results_store[task_id] = None
@@ -55,18 +59,22 @@ async def generate_image_endpoint(request: ImagePromptRequest):
         request.height,
         request.width,
     )
-    return {"task_id": task_id, "status": "processing"}
+    response = {"task_id": task_id, "status": "processing"}
+    print(response)
+    return response
 
 
 @router.post("/edit_image", response_model=GenerateResponse)
 async def edit_image_endpoint(request: ImageEditPromptRequest):
     if runtime.image_edit_load_status != "loaded":
-        return {
+        response = {
             "task_id": "",
             "status": runtime.image_edit_load_status
             if runtime.image_edit_load_status != "error"
             else f"error: {runtime.image_edit_load_error}",
         }
+        print(response)
+        return response
 
     try:
         resolve_source_image_path(request.source_image)
@@ -95,18 +103,22 @@ async def edit_image_endpoint(request: ImageEditPromptRequest):
         request.guidance_scale,
         request.num_inference_steps,
     )
-    return {"task_id": task_id, "status": "processing"}
+    response = {"task_id": task_id, "status": "processing"}
+    print(response)
+    return response
 
 
 @router.post("/generate_music", response_model=GenerateResponse)
 async def generate_music_endpoint(request: MusicPromptRequest):
     if runtime.music_load_status != "loaded":
-        return {
+        response = {
             "task_id": "",
             "status": runtime.music_load_status
             if runtime.music_load_status != "error"
             else f"error: {runtime.music_load_error}",
         }
+        print(response)
+        return response
 
     task_id = str(uuid.uuid4())
     runtime.music_results_store[task_id] = None
@@ -120,7 +132,9 @@ async def generate_music_endpoint(request: MusicPromptRequest):
         request.name,
         request.max_new_tokens,
     )
-    return {"task_id": task_id, "status": "processing"}
+    response = {"task_id": task_id, "status": "processing"}
+    print(response)
+    return response
 
 
 
@@ -128,53 +142,77 @@ async def generate_music_endpoint(request: MusicPromptRequest):
 @router.get("/text_result/{task_id}", response_model=ResultResponse)
 async def get_text_result(task_id: str):
     if task_id not in runtime.results_store:
-        return {"status": "not_found", "response": None}
+        response = {"status": "not_found", "response": None}
+        print(response)
+        return response
 
     result = runtime.results_store[task_id]
     if result is None:
-        return {"status": "processing", "response": None}
+        response = {"status": "processing", "response": None}
+        print(response)
+        return response
 
     response = runtime.results_store.pop(task_id)
-    return {"status": "completed", "response": response}
+    body = {"status": "completed", "response": response}
+    print(body)
+    return body
 
 
 @router.get("/image_result/{task_id}")
 async def get_image_result(task_id: str):
     if task_id not in runtime.image_results_store:
-        return {"status": "not_found", "path": None}
+        response = {"status": "not_found", "path": None}
+        print(response)
+        return response
 
     result = runtime.image_results_store[task_id]
     if result is None:
-        return {"status": "processing", "path": None}
+        response = {"status": "processing", "path": None}
+        print(response)
+        return response
 
     path = runtime.image_results_store.pop(task_id)
-    return {"status": "completed", "path": path}
+    body = {"status": "completed", "path": path}
+    print(body)
+    return body
 
 
 @router.get("/image_edit_result/{task_id}")
 async def get_image_edit_result(task_id: str):
     if task_id not in runtime.image_edit_results_store:
-        return {"status": "not_found", "path": None}
+        response = {"status": "not_found", "path": None}
+        print(response)
+        return response
 
     result = runtime.image_edit_results_store[task_id]
     if result is None:
-        return {"status": "processing", "path": None}
+        response = {"status": "processing", "path": None}
+        print(response)
+        return response
 
     path = runtime.image_edit_results_store.pop(task_id)
-    return {"status": "completed", "path": path}
+    body = {"status": "completed", "path": path}
+    print(body)
+    return body
 
 
 @router.get("/music_result/{task_id}")
 async def get_music_result(task_id: str):
     if task_id not in runtime.music_results_store:
-        return {"status": "not_found", "path": None}
+        response = {"status": "not_found", "path": None}
+        print(response)
+        return response
 
     result = runtime.music_results_store[task_id]
     if result is None:
-        return {"status": "processing", "path": None}
+        response = {"status": "processing", "path": None}
+        print(response)
+        return response
 
     path = runtime.music_results_store.pop(task_id)
-    return {"status": "completed", "path": path}
+    body = {"status": "completed", "path": path}
+    print(body)
+    return body
 
 
 
@@ -187,7 +225,7 @@ async def get_music_result(task_id: str):
 
 @router.get("/health")
 async def health():
-    return {
+    response = {
         "status": "running",
         "model": runtime.MODEL_NAME,
         "device": str(runtime.device),
@@ -202,3 +240,5 @@ async def health():
         "pending_image_edit_tasks": sum(1 for value in runtime.image_edit_results_store.values() if value is None),
         "pending_music_tasks": sum(1 for value in runtime.music_results_store.values() if value is None),
     }
+    print(response)
+    return response
