@@ -44,6 +44,18 @@ def resolve_output_path(name: str) -> Path:
     return OUTPUT_DIR / candidate.name
 
 
+def _apply_pixel_art_postprocess(image: Image.Image, downscale_factor: int = 8) -> Image.Image:
+    """Downscale in blocks using nearest-neighbor sampling to preserve crisp pixel-art edges."""
+    if downscale_factor <= 1:
+        return image
+
+    width, height = image.size
+    reduced_width = max(1, width // downscale_factor)
+    reduced_height = max(1, height // downscale_factor)
+    reduced = image.resize((reduced_width, reduced_height), resample=Image.Resampling.NEAREST)
+    return reduced.resize((width, height), resample=Image.Resampling.NEAREST)
+
+
 def edit_image(
     task_id: str,
     source_image: str,
@@ -72,6 +84,7 @@ def edit_image(
             num_inference_steps=num_inference_steps,
             guidance_scale=guidance_scale,
         ).images[0]
+        edited = _apply_pixel_art_postprocess(edited)
 
         out_path = resolve_output_path(name)
         out_path.parent.mkdir(parents=True, exist_ok=True)

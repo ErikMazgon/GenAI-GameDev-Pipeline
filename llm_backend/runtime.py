@@ -71,7 +71,9 @@ def load_image_pipeline() -> None:
             "stabilityai/stable-diffusion-xl-base-1.0",
             torch_dtype=torch.bfloat16,
         )
-        image_pipe.to("cuda")
+        image_pipe.to(device=device, dtype=torch.float16 if device == "cuda" else torch.float32)
+        if hasattr(image_pipe, "vae"):
+            image_pipe.vae.to(dtype=torch.float16 if device == "cuda" else torch.float32)
         image_pipe.load_lora_weights("nerijs/pixel-art-xl")
         image_load_status = "loaded"
         print("Image pipeline loaded!")

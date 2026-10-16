@@ -11,23 +11,28 @@ from .text_service import _summarizer_generate_fn
 
 
 def _build_music_prompt(user_request: str) -> str:
-    """Combine the game's design summary with the new request to produce
+    """Combine the game's design summary and earlier prompts with the new request to produce
     a single, self-contained prompt suitable for the music/audio pipeline."""
     context = context_service.load_context()
     summary = context["summary"].strip()
+    recent_turns = context_service.build_recent_turns_prompt(context).strip()
 
-    if not summary:
+    if not summary and not recent_turns:
         return user_request
+
+    recent_section = f"\n\n{recent_turns}\n" if recent_turns else ""
 
     distill_prompt = f"""Game design document:
 {summary}
-
+{recent_section}
 New music/sound request: {user_request}
 
 Rewrite the new request as a single, self-contained, descriptive music-generation prompt
-(instrumentation, mood, tempo, genre). Incorporate relevant details from the design document
-(theme, tone, setting) only if clearly relevant to this specific request. Do not invent
-unrelated details. Output ONLY the final prompt text, nothing else.
+(instrumentation, mood, tempo, genre). Use the game design document and earlier project prompts
+only as historical style and continuity context. Treat previous prompts as earlier references,
+not as the current request. Incorporate relevant details from the design document and earlier prompts
+only if clearly relevant to this specific request. Do not invent unrelated details.
+Output ONLY the final prompt text, nothing else.
 """
     return _summarizer_generate_fn(distill_prompt).strip()
 

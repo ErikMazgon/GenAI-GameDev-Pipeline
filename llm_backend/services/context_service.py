@@ -78,6 +78,20 @@ def build_context_string(context: dict) -> str:
     return "\n\n".join(parts)
 
 
+def build_recent_turns_prompt(context: dict) -> str:
+    recent_turns = context.get("recent_turns", [])
+    if not recent_turns:
+        return ""
+
+    turn_lines = [
+        "Previous project prompt:\n"
+        f"User: {t['user']}\n"
+        f"Assistant response: {t['assistant']}"
+        for t in recent_turns
+    ]
+    return "Earlier prompts from this project (for reference only, not the current request):\n" + "\n\n".join(turn_lines)
+
+
 def _update_game_model(old_summary: str, new_turn: dict, generate_fn) -> str:
     prompt = f"""You maintain a structured design document describing a video game the user is building,
 based on their requests so far (text descriptions, image generations, and sound generations).

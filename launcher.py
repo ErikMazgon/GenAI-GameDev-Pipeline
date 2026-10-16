@@ -1,7 +1,8 @@
 import subprocess
+import sys
+from pathlib import Path
 
-print("Launching script with specific Python version...")  
-# Path to the desired Python version
-python_path = "C:/Users/erik/AppData/Local/Programs/Python/Python312/python.exe"
-# Command to run the script with the desired Python version
-subprocess.run([python_path, "test.py"])
+print("Launching script with the current project Python environment...")
+script_dir = Path(__file__).resolve().parent
+python_path = Path(sys.executable)
+subprocess.run([str(python_path), str(script_dir / "test.py")])
