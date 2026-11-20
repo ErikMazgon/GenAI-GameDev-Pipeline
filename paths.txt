@@ -1,9 +1,0 @@
-"C:\Users\erik\Documents\Unreal Projects\MyProject\Content\Python\user-input.txt"
-"C:\Users\erik\Documents\Unreal Projects\MyProject\Content\Python\test.py"
-"C:\Users\erik\Documents\Unreal Projects\MyProject\Content\Python\odgovor.txt"
-"C:\Users\erik\Documents\Unreal Projects\MyProject\Content\Python\import.py"
-
-"C:/Users/erik/Documents/Unreal Projects/MyProject/Content/Python/user-input.txt"
-"C:/Users/erik/Documents/Unreal Projects/MyProject/Content/Python/test.py"
-"C:/Users/erik/Documents/Unreal Projects/MyProject/Content/Python/odgovor.txt"
-"C:/Users/erik/Documents/Unreal Projects/MyProject/Content/Python/import.py"

@@ -10,6 +10,10 @@ from llm_backend.services import context_service
 from llm_backend.services.text_service import _summarizer_generate_fn
 
 
+# Switch this between "contextual" and "direct" to choose image prompt mode.
+IMAGE_GENERATION_MODE = "contextual"
+
+
 def _build_image_prompt(user_request: str) -> str:
     """Combine the game's design summary and earlier prompts with the new request to produce
     a single, self-contained prompt suitable for the image pipeline."""
@@ -62,27 +66,31 @@ def _apply_pixel_art_postprocess(image: Image.Image, downscale_factor: int = 8) 
     return reduced.resize((width, height), resample=Image.Resampling.NEAREST)
 
 
-def generate_image(task_id: str, prompt: str, name: Optional[str], height: int, width: int) -> None:
+def _generate_and_store_image(task_id: str, final_prompt: str, name: Optional[str], height: int, width: int) -> None:
+    image = runtime.image_pipe(final_prompt, height=height, width=width).images[0]
+    image = _apply_pixel_art_postprocess(image)
+
+    filename = name or f"{task_id}.png"
+    candidate = Path(filename)
+    if candidate.suffix == "":
+        candidate = Path(f"{candidate.name}.png")
+
+    out_path = OUTPUT_DIR / candidate.name
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(out_path, format="PNG")
+
+    runtime.image_results_store[task_id] = str(out_path)
+
+
+def generate_image_contextual(task_id: str, prompt: str, name: Optional[str], height: int, width: int) -> None:
+    """Current mode: rewrite prompt with text model and update context."""
     try:
         if runtime.image_pipe is None:
             raise RuntimeError("Image pipeline is not loaded yet")
 
         final_prompt = _build_image_prompt(prompt)
         print(f"Generating image prompt: {final_prompt}")
-
-        image = runtime.image_pipe(final_prompt, height=height, width=width).images[0]
-        image = _apply_pixel_art_postprocess(image)
-
-        filename = name or f"{task_id}.png"
-        candidate = Path(filename)
-        if candidate.suffix == "":
-            candidate = Path(f"{candidate.name}.png")
-
-        out_path = OUTPUT_DIR / candidate.name
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        image.save(out_path, format="PNG")
-
-        runtime.image_results_store[task_id] = str(out_path)
+        _generate_and_store_image(task_id, final_prompt, name, height, width)
 
         context_service.update_context_with_new_turn(
             user_message=prompt,
@@ -92,3 +100,33 @@ def generate_image(task_id: str, prompt: str, name: Optional[str], height: int, 
 
     except Exception as error:
         runtime.image_results_store[task_id] = f"Error: {error}"
+
+
+def generate_image_direct(task_id: str, prompt: str, name: Optional[str], height: int, width: int) -> None:
+    """New mode: use the user's prompt directly and do not update context."""
+    try:
+        if runtime.image_pipe is None:
+            raise RuntimeError("Image pipeline is not loaded yet")
+
+        final_prompt = _clip_safe_truncate(prompt.strip())
+        print(f"Generating image prompt: {final_prompt}")
+        _generate_and_store_image(task_id, final_prompt, name, height, width)
+
+    except Exception as error:
+        runtime.image_results_store[task_id] = f"Error: {error}"
+
+
+def generate_image(task_id: str, prompt: str, name: Optional[str], height: int, width: int) -> None:
+    """Entrypoint with mode switch. Set IMAGE_GENERATION_MODE to "contextual" or "direct"."""
+    if IMAGE_GENERATION_MODE == "contextual":
+        generate_image_contextual(task_id, prompt, name, height, width)
+        return
+
+    if IMAGE_GENERATION_MODE == "direct":
+        generate_image_direct(task_id, prompt, name, height, width)
+        return
+
+    runtime.image_results_store[task_id] = (
+        f"Error: Unsupported IMAGE_GENERATION_MODE '{IMAGE_GENERATION_MODE}'. "
+        "Use 'contextual' or 'direct'."
+    )

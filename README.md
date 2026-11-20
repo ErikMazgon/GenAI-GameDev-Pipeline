@@ -1,5 +1,46 @@
-# Mag
-Master's Thesis in Unreal Engine
+# Generative AI Integration in Unreal Engine
+
+This project was developed as part of a master's thesis.
+It demonstrates the integration of generative AI tools
+into the Unreal Engine development workflow.
+
+## Project Structure
+
+- `backend/` – Python backend and AI model integration.
+- `unreal-project/` – Unreal Engine project.
+- `docs/` – Additional documentation.
+
+## Requirements
+
+- Unreal Engine 5.5
+- Python 3.12
+- Git
+- Git LFS
+
+## Backend Setup
+
+1. Install Python 3.12.
+2. Navigate to the backend directory.
+3. Create a virtual environment.
+4. Install dependencies:
+
+   `pip install -r requirements.txt`
+
+5. Configure required environment variables.
+6. Start the backend server using the provided startup script.
+
+## Unreal Engine Setup
+
+1. Open the `.uproject` file inside `unreal-project/`.
+2. Use Unreal Engine 5.5.
+3. Allow Unreal Engine to generate required files.
+4. Configure the backend connection.
+5. Start the backend before using AI functionality.
+
+## License
+
+This project is licensed under the MIT License.
+See the LICENSE file for details.
 
 ## LLM Server Structure
 

@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-HF_CACHE_ROOT = Path(os.environ.get("HF_HOME", str(PROJECT_ROOT / ".hf_cache")))
-OUTPUT_DIR = PROJECT_ROOT / "outputs"
+# PROJECT_ROOT = Path(__file__).resolve().parent.parent
+HF_CACHE_ROOT = Path(r"D:\ErikM\hf_cache")
+OUTPUT_DIR = Path(r"C:\Users\erik\Documents\Unreal Projects\EvalGameAI\Plugins\GenAIAssistant\Content\Python\outputs")
 
 MODEL_NAME = "Qwen/Qwen2.5-3B-Instruct"
 MUSIC_MODEL_NAME = "facebook/musicgen-small"
